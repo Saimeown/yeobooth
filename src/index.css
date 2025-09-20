@@ -1,0 +1,157 @@
+@import url('https://fonts.googleapis.com/css2?family=Cherry+Bomb+One&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=DynaPuff:wght@400..700&display=swap');
+@import "tailwindcss";
+
+.cherry-bomb {
+  font-family: "Cherry Bomb One", system-ui;
+  font-weight: 400;
+  font-style: normal;
+}
+
+/* Utility class for components */
+.font-cherry-bomb {
+  font-family: "Cherry Bomb One", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+.font-dynapuff {
+  font-family: "DynaPuff", system-ui, -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Yeobooth 3D inner-shadow + extrude effect (approach 2) */
+.yeobooth-inner {
+  position: relative;
+  display: inline-block;
+  color: #fff7ee; /* front face */
+  text-shadow: 0 1px 0 #ead4bf, 0 3px 8px rgba(0,0,0,0.25);
+  -webkit-text-stroke: 0.5px rgba(0,0,0,0.06);
+  transform: translateZ(0);
+}
+
+.yeobooth-inner::before {
+  /* extruded shadow behind the text */
+  content: attr(data-text);
+  position: absolute;
+  left: 0; top: 0;
+  transform: translate(6px, 6px) skewX(-6deg);
+  color: rgba(0,0,0,0.28);
+  z-index: -1;
+  filter: blur(0.6px);
+  pointer-events: none;
+}
+
+.yeobooth-inner::after {
+  /* inner rim to simulate inset shadow */
+  content: attr(data-text);
+  position: absolute;
+  left: 0; top: 0;
+  color: rgba(0,0,0,0.35);
+  mix-blend-mode: multiply;
+  transform: translateY(0.8px);
+  filter: blur(3px);
+  opacity: 0.45;
+  pointer-events: none;
+  mask-image: linear-gradient(#000, transparent);
+}
+
+:root {
+  --yeo-main: #fff7ee; /* text face color */
+  --yeo-accent: #efd2b8; /* lighter accent */
+  --yeo-shadow: rgba(0,0,0,0.28);
+}
+
+/* Glass button */
+.glass-button {
+  background: linear-gradient(180deg, rgba(255,255,255,0.65), rgba(255,255,255,0.42));
+  border: 1px solid rgba(255,255,255,0.25);
+  backdrop-filter: blur(6px) saturate(120%);
+  -webkit-backdrop-filter: blur(6px) saturate(120%);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.12), inset 0 1px 0 rgba(255,255,255,0.6);
+  color: var(--yeo-main);
+  display: inline-flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.9rem 1.4rem;
+  border-radius: 9999px;
+  transition: transform 180ms ease, box-shadow 180ms ease, background 180ms ease;
+}
+
+.glass-button:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 28px rgba(0,0,0,0.18), inset 0 1px 0 rgba(255,255,255,0.7);
+  background: linear-gradient(180deg, rgba(255,255,255,0.8), rgba(255,255,255,0.5));
+}
+
+.glass-button:active {
+  transform: translateY(0);
+  box-shadow: 0 6px 12px rgba(0,0,0,0.14), inset 0 1px 0 rgba(255,255,255,0.55);
+}
+
+.glass-button .camera-icon {
+  width: 24px;
+  height: 24px;
+  display: inline-block;
+  object-fit: contain;
+  border-radius: 6px;
+}
+
+/* Approach 3: SVG-filtered inset shadow for crisp inner shadow */
+.yeobooth-svg {
+  color: var(--yeo-main);
+  filter: url('#inset-shadow');
+  text-shadow: 0 10px 24px rgba(0,0,0,0.22); /* soft external shadow */
+  -webkit-text-stroke: 0.4px rgba(0,0,0,0.08);
+}
+
+.text-svg {
+  color: var(--yeo-main);
+  filter: url('#inset-shadow');
+}
+
+/* Fallback: combine with existing inner approach if SVG filter not supported */
+@supports not (filter: url('#inset-shadow')) {
+  .yeobooth-svg {
+    /* fallback to .yeobooth-inner style */
+    text-shadow: 0 1px 0 #ead4bf, 0 3px 8px rgba(0,0,0,0.25);
+  }
+}
+
+/* Glass components for minimalist UI */
+.glass-card {
+  background: linear-gradient(180deg, rgba(255,255,255,0.45), rgba(255,255,255,0.25));
+  border: 1px solid rgba(255,255,255,0.3);
+  backdrop-filter: blur(8px) saturate(120%);
+  -webkit-backdrop-filter: blur(8px) saturate(120%);
+  box-shadow: 0 4px 16px rgba(0,0,0,0.08), inset 0 1px 0 rgba(255,255,255,0.4);
+  border-radius: 20px;
+}
+
+.glass-indicator {
+  background: linear-gradient(180deg, rgba(255,255,255,0.6), rgba(255,255,255,0.4));
+  border: 1px solid rgba(255,255,255,0.35);
+  backdrop-filter: blur(6px) saturate(110%);
+  -webkit-backdrop-filter: blur(6px) saturate(110%);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.06), inset 0 1px 0 rgba(255,255,255,0.5);
+  border-radius: 16px;
+  padding: 0.5rem 0.75rem;
+}
+
+.glass-layout-picker {
+  background: linear-gradient(180deg, rgba(255,255,255,0.5), rgba(255,255,255,0.3));
+  border: 2px solid rgba(255,255,255,0.4);
+  backdrop-filter: blur(6px) saturate(115%);
+  -webkit-backdrop-filter: blur(6px) saturate(115%);
+  box-shadow: 0 3px 12px rgba(0,0,0,0.07), inset 0 1px 0 rgba(255,255,255,0.45);
+  border-radius: 20px;
+  transition: all 200ms ease;
+}
+
+.glass-layout-picker:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(0,0,0,0.1), inset 0 1px 0 rgba(255,255,255,0.5);
+}
+
+.glass-layout-picker.selected {
+  border-color: rgba(245, 158, 11, 0.6);
+  background: linear-gradient(180deg, rgba(255,255,255,0.7), rgba(255,255,255,0.5));
+  box-shadow: 0 4px 16px rgba(245, 158, 11, 0.15), inset 0 1px 0 rgba(255,255,255,0.6);
+}

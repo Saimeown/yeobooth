@@ -1,0 +1,27 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Yeobooth - Cute Photo Booth</title>
+  </head>
+  <body>
+    <!-- SVG filters (invisible) for text effects -->
+    <svg width="0" height="0" style="position:absolute">
+      <defs>
+        <filter id="inset-shadow" x="-50%" y="-50%" width="200%" height="200%">
+          <feFlood flood-color="#000" flood-opacity="0.45" result="flood" />
+          <feComposite in="flood" in2="SourceGraphic" operator="in" result="in1" />
+          <feGaussianBlur in="in1" stdDeviation="3" result="blur" />
+          <feComposite in="SourceGraphic" in2="blur" operator="over" />
+        </filter>
+      </defs>
+    </svg>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
