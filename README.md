@@ -14,6 +14,7 @@ Yeobooth is a modern, minimalist web-based photobooth application built with Rea
 - Download high-quality PNG collages
 - Responsive design for desktop and mobile
 - Extensible architecture for adding new layouts, frames, or features
+- (AR filters coming soon)
 
 ## Table of Contents
 - [Demo](#demo)
