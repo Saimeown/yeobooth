@@ -569,23 +569,23 @@ const Photobooth = () => {
 
     return (
         <div 
-            className="min-h-screen"
+            className="flex flex-col min-h-screen"
             style={{ background: 'linear-gradient(135deg, #ef8d55 0%, #eceae5 100%)' }}
         >
             {/* Minimalist Header */}
-            <div className="flex items-center justify-between p-6">
+            <div className="flex items-center justify-between p-6 flex-shrink-0">
                 <button onClick={handleBackToSelection} className="glass-button" aria-label="Back to Selection">
                     <img src={cameraIcon} alt="Back" className="camera-icon" />
                 </button>
             </div>
 
-            <div className="max-w-6xl mx-auto px-6 space-y-6">
+            <div className="flex-1 max-w-6xl w-full mx-auto px-6 pb-6">
                 {/* Main Interface */}
-                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-6 h-full">
                     {/* Camera Section */}
-                    <div className="glass-card p-6 space-y-4">
+                    <div className="glass-card p-6 space-y-4 flex flex-col">
                         {!isSessionComplete && (
-                            <div className="glass-indicator text-center">
+                            <div className="glass-indicator text-center flex-shrink-0">
                                 <p className="font-dynapuff text-sm font-medium text-amber-900">
                                     Shot {currentShot + 1} of {totalShots}
                                 </p>
@@ -593,7 +593,7 @@ const Photobooth = () => {
                         )}
 
                         {/* Video Preview */}
-                        <div className="relative aspect-square bg-amber-900 rounded-2xl overflow-hidden">
+                        <div className="relative aspect-square bg-amber-900 rounded-2xl overflow-hidden flex-1 max-h-[70vh] xl:max-h-none">
                             {isLoading && (
                                 <div className="absolute inset-0 bg-gradient-to-br from-stone-100 to-amber-100 flex items-center justify-center">
                                     <div className="text-center">
@@ -643,124 +643,120 @@ const Photobooth = () => {
                         </div>
 
                         {/* Camera Controls */}
-                        {!isSessionComplete ? (
-                            <button
-                                onClick={handleTakePhoto}
-                                disabled={isCapturing || showCountdown || isLoading || !!cameraError}
-                                className="w-full glass-button justify-center py-4 disabled:opacity-50 disabled:cursor-not-allowed"
-                            >
-                                <img src={cameraIcon} alt="Take Photo" className="camera-icon" />
-                                {!isLoading && !cameraError && !showCountdown && !isCapturing && (
-                                    <span className="font-dynapuff font-semibold text-amber-900">Take Photo</span>
-                                )}
-                            </button>
-                        ) : (
-                            <div className="space-y-4">
-                                <div className="glass-indicator text-center">
-                                    <p className="font-dynapuff text-amber-800 font-medium">Complete!</p>
-                                </div>
-                                
-                                <div className="glass-card p-4">
-                                    <input
-                                        type="text"
-                                        value={caption}
-                                        onChange={(e) => setCaption(e.target.value)}
-                                        maxLength={50}
-                                        placeholder="Add caption..."
-                                        className="w-full px-3 py-2 border-0 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white/80 text-amber-900 font-dynapuff backdrop-blur-sm"
-                                    />
-                                </div>
+                        <div className="flex-shrink-0">
+                            {!isSessionComplete ? (
+                                <button
+                                    onClick={handleTakePhoto}
+                                    disabled={isCapturing || showCountdown || isLoading || !!cameraError}
+                                    className="w-full glass-button justify-center py-4 disabled:opacity-50 disabled:cursor-not-allowed"
+                                >
+                                    <img src={cameraIcon} alt="Take Photo" className="camera-icon" />
+                                    {!isLoading && !cameraError && !showCountdown && !isCapturing && (
+                                        <span className="font-dynapuff font-semibold text-amber-900">Take Photo</span>
+                                    )}
+                                </button>
+                            ) : (
+                                <div className="space-y-4">
+                                    <div className="glass-indicator text-center">
+                                        <p className="font-dynapuff text-amber-800 font-medium">Complete!</p>
+                                    </div>
+                                    
+                                    <div className="glass-card p-4">
+                                        <input
+                                            type="text"
+                                            value={caption}
+                                            onChange={(e) => setCaption(e.target.value)}
+                                            maxLength={50}
+                                            placeholder="Add caption..."
+                                            className="w-full px-3 py-2 border-0 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-500 bg-white/80 text-amber-900 font-dynapuff backdrop-blur-sm"
+                                        />
+                                    </div>
 
-                                <div className="grid grid-cols-2 gap-3">
-                                    <button
-                                        onClick={downloadCollage}
-                                        className="glass-button justify-center py-3"
-                                    >
-                                        <span className="font-dynapuff font-semibold text-amber-800">Download</span>
-                                    </button>
-                                    <button
-                                        onClick={resetSession}
-                                        className="glass-button justify-center py-3"
-                                    >
-                                        <span className="font-dynapuff font-semibold text-amber-900">New</span>
-                                    </button>
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <button
+                                            onClick={downloadCollage}
+                                            className="glass-button justify-center py-3"
+                                        >
+                                            <span className="font-dynapuff font-semibold text-amber-800">Download</span>
+                                        </button>
+                                        <button
+                                            onClick={resetSession}
+                                            className="glass-button justify-center py-3"
+                                        >
+                                            <span className="font-dynapuff font-semibold text-amber-900">New</span>
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
-                        )}
+                            )}
+                        </div>
                     </div>
 
                     {/* Photos Section */}
-                    <div className="glass-card p-6">
-                        <div className="glass-indicator text-center mb-4">
+                    <div className="glass-card p-6 flex flex-col">
+                        <div className="glass-indicator text-center mb-4 flex-shrink-0">
                             <p className="font-dynapuff text-sm text-amber-900">
                                 {capturedPhotos.length} of {totalShots}
                             </p>
                         </div>
 
-                        {capturedPhotos.length === 0 ? (
-                            <div className="aspect-square border-2 border-dashed border-white/30 rounded-2xl flex items-center justify-center">
-                                <div className="text-center">
-                                    <img src={landingBunny} alt="Empty" className="w-16 h-16 mx-auto mb-3 opacity-60" />
-                                    <p className="font-dynapuff text-amber-700">Photos appear here</p>
+                        <div className="flex-1 flex flex-col">
+                            {capturedPhotos.length === 0 ? (
+                                <div className="flex-1 border-2 border-dashed border-white/30 rounded-2xl flex items-center justify-center min-h-[300px]">
+                                    <div className="text-center">
+                                        <img src={landingBunny} alt="Empty" className="w-16 h-16 mx-auto mb-3 opacity-60" />
+                                        <p className="font-dynapuff text-amber-700">Photos appear here</p>
+                                    </div>
                                 </div>
-                            </div>
-                        ) : (
-                            <div className="space-y-4">
-                                {/* Individual Photos Grid */}
-                                <div className="grid grid-cols-2 gap-3">
-                                    {Array.from({ length: totalShots }).map((_, index) => (
-                                        <div
-                                            key={index}
-                                            className={`aspect-square rounded-2xl overflow-hidden border-2 ${
-                                                capturedPhotos[index]
-                                                    ? 'border-amber-400/60 bg-amber-50/20'
-                                                    : 'border-white/30 bg-white/10'
-                                            }`}
-                                        >
-                                            {capturedPhotos[index] ? (
-                                                <img
-                                                    src={capturedPhotos[index]}
-                                                    alt={`Photo ${index + 1}`}
-                                                    className="w-full h-full object-cover"
-                                                />
-                                            ) : (
-                                                <div className="w-full h-full flex items-center justify-center">
-                                                    <img src={cameraIcon} alt="Empty slot" className="w-8 h-8 opacity-40" />
-                                                </div>
-                                            )}
-                                        </div>
-                                    ))}
-                                </div>
+                            ) : (
+                                <div className="space-y-4 flex-1 flex flex-col">
+                                    {/* Individual Photos Grid */}
+                                    <div className="grid grid-cols-2 gap-3 flex-shrink-0">
+                                        {Array.from({ length: totalShots }).map((_, index) => (
+                                            <div
+                                                key={index}
+                                                className={`aspect-square rounded-2xl overflow-hidden border-2 ${
+                                                    capturedPhotos[index]
+                                                        ? 'border-amber-400/60 bg-amber-50/20'
+                                                        : 'border-white/30 bg-white/10'
+                                                }`}
+                                            >
+                                                {capturedPhotos[index] ? (
+                                                    <img
+                                                        src={capturedPhotos[index]}
+                                                        alt={`Photo ${index + 1}`}
+                                                        className="w-full h-full object-cover"
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full flex items-center justify-center">
+                                                        <img src={cameraIcon} alt="Empty slot" className="w-8 h-8 opacity-40" />
+                                                    </div>
+                                                )}
+                                            </div>
+                                        ))}
+                                    </div>
 
-                                {/* Final Preview */}
-                                {isSessionComplete && (
-                                    <div className="glass-card p-4">
-                                        <h4 className="font-dynapuff text-amber-900 font-semibold text-center mb-3">Preview</h4>
-                                        <div className="bg-white/80 p-3 rounded-xl backdrop-blur-sm">
-                                            {previewDataUrl ? (
-                                                <div className="flex justify-center">
+                                    {/* Final Preview */}
+                                    {isSessionComplete && (
+                                        <div className="glass-card p-4 h-80 flex flex-col">
+                                            <h4 className="font-dynapuff text-amber-900 font-semibold text-center mb-3 flex-shrink-0">Preview</h4>
+                                            <div className="bg-white/80 p-3 rounded-xl backdrop-blur-sm flex-1 flex items-center justify-center overflow-hidden">
+                                                {previewDataUrl ? (
                                                     <img
                                                         src={previewDataUrl}
                                                         alt="Final preview"
-                                                        className={`rounded-lg shadow-lg ${
-                                                            selectedLayout === '1x3' 
-                                                                ? 'max-h-48 w-auto' 
-                                                                : selectedLayout === '2x2'
-                                                                    ? 'max-w-32 max-h-32'
-                                                                    : 'max-w-24 max-h-36'
-                                                        }`}
+                                                        className="rounded-lg shadow-lg max-w-full max-h-full object-contain"
                                                     />
-                                                </div>
-                                            ) : (
-                                                <div className="flex justify-center items-center h-24">
-                                                    <div className="w-6 h-6 border-2 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
-                                                </div>
-                                            )}
+                                                ) : (
+                                                    <div className="flex justify-center items-center">
+                                                        <div className="w-6 h-6 border-2 border-amber-400 border-t-transparent rounded-full animate-spin"></div>
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
-                                    </div>
-                                )}
-                            </div>
-                        )}
+                                    )}
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
 
