@@ -143,7 +143,3 @@ your-project/
 ## Contributing
 
 Contributions are welcome! Please open an issue or submit a pull request for bug fixes, new features, or improvements.
-
-## License
-
-This project is licensed under the MIT License. See [LICENSE](LICENSE) for details.
