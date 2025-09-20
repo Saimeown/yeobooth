@@ -1,6 +1,8 @@
 
 # Yeobooth
 
+![Demo](./yeobooth.gif)
+
 Yeobooth is a modern, minimalist web-based photobooth application built with React, TypeScript, Vite, and TailwindCSS. It allows users to capture photos using their webcam, select from multiple layout and frame options, and download a beautifully composited image with a live preview. The project is designed for both desktop and mobile use, with a focus on a clean, glassmorphic UI and a seamless user experience.
 
 ## Features
