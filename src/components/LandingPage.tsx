@@ -23,7 +23,7 @@ const LandingPage = () => {
           <div className=" space-y-8">
             {/* Brand Section */}
             <div className="space-y-4">
-              <h1 className="flex justify-center font-cherry-bomb text-8xl lg:text-9xl font-bold yeobooth-svg tracking-tight">
+              <h1 className="flex justify-center font-cherry-bomb text-7xl lg:text-9xl font-bold yeobooth-svg tracking-tight">
                 Yeobooth
               </h1>
             </div>
