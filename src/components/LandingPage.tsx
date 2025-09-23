@@ -1,3 +1,4 @@
+
 import { useNavigate } from 'react-router-dom';
 import landingBunny from '../assets/landing-bunny.svg';
 import cameraIcon from '../assets/camera-icon.jpg';
@@ -16,21 +17,23 @@ const LandingPage = () => {
     >
       {/* Main Content Container */}
       <div className="flex-1 flex items-center justify-center px-8">
-        <div className="max-w-5xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-2 gap-12 items-center">
 
           {/* Left Column - Brand & Content */}
-          <div className="text-center space-y-8">
+          <div className=" space-y-8">
             {/* Brand Section */}
             <div className="space-y-4">
-              <h1 className="font-cherry-bomb text-6xl lg:text-8xl font-bold yeobooth-svg tracking-tight">
+              <h1 className="flex justify-center font-cherry-bomb text-8xl lg:text-9xl font-bold yeobooth-svg tracking-tight">
                 Yeobooth
               </h1>
             </div>
 
             {/* Action Button */}
-            <button onClick={handleGoToBooth} className="glass-button" aria-label="Go to Booth">
-              <img src={cameraIcon} alt="Camera" className="camera-icon" />
-            </button>
+            <div className="flex justify-center mt-6">
+              <button onClick={handleGoToBooth} className="glass-button" aria-label="Go to Booth">
+                <img src={cameraIcon} alt="Camera" className="camera-icon" />
+              </button>
+            </div>
           </div>
 
           {/* Right Column - Visual Elements */}

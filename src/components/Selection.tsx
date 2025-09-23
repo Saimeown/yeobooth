@@ -172,7 +172,7 @@ const Selection = () => {
                         {layouts.map((layout) => (
                             <button
                                 key={layout.id}
-                                className={`p-8 backdrop-blur-md border-2 transition-all duration-300 hover:scale-105 ${
+                                className={`p-8 backdrop-blur-md rounded-4xl border-2 transition-all duration-300 hover:scale-105 ${
                                     selectedLayout === layout.id 
                                         ? 'bg-orange-100 border-amber-100 shadow-lg' 
                                         : 'bg-white/20 border-white/30 hover:bg-white/30'

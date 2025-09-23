@@ -144,6 +144,7 @@ const Photobooth = () => {
     const [cameraError, setCameraError] = useState<string | null>(null);
     const [isLoading, setIsLoading] = useState(true);
     const [previewDataUrl, setPreviewDataUrl] = useState<string | null>(null);
+    const [isDownloading, setIsDownloading] = useState(false);
 
     const videoRef = useRef<HTMLVideoElement>(null);
     const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -290,259 +291,325 @@ const Photobooth = () => {
         setCaption('');
     };
 
-    const downloadCollage = () => {
-        if (capturedPhotos.length === 0) return;
-
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
-
-        const layout = selectedLayoutData;
-        canvas.width = layout.canvasWidth;
-        canvas.height = layout.canvasHeight;
-
-        const selectedFrameData = availableFrames.find(f => f.id === selectedFrame);
-        if (!selectedFrameData) return;
-
-        const frameImg = new Image();
-        frameImg.onload = () => {
-            ctx.drawImage(frameImg, 0, 0, layout.canvasWidth, layout.canvasHeight);
-
-            const loadPromises = capturedPhotos.map((photoDataUrl, index) => {
-                return new Promise<void>((resolve) => {
-                    const img = new Image();
-                    img.onload = () => {
-                        let photoX = 0, photoY = 0, photoWidth = 400, photoHeight = 400;
-                        
-                        if (selectedLayout === '1x1') {
-                            photoWidth = 540;   // Photo width - fits within frame
-                            photoHeight = 610;  // Photo height - square for consistency
-                            photoX = (layout.canvasWidth - photoWidth) / 2;   // Horizontal center
-                            photoY = (layout.canvasHeight - photoHeight) / 2 - 100; // Slightly above center
-                        } else if (selectedLayout === '1x3') {
-                            photoWidth = 540;   // Photo width - fits within frame
-                            photoHeight = 470;  // Photo height - square for consistency
-                            photoX = (layout.canvasWidth - photoWidth) / 2; // Horizontal center
-                            const startY = 40; // Starting Y position for first photo
-                            const gap = 485;    // Gap between photos (480 + 120 margin)
-                            photoY = startY + (index * gap); // Position for current photo
-                        } else if (selectedLayout === '2x2') {
-                            photoWidth = 450;   // Photo width - fits within frame quadrants
-                            photoHeight = 450;  // Photo height - square for consistency
-                            const gap = 20;     // Gap between photos
-                            const totalContentWidth = (photoWidth * 2) + gap;  // 920px
-                            const totalContentHeight = (photoHeight * 2) + gap; // 920px
-                            const marginX = (layout.canvasWidth - totalContentWidth) / 2;   // 140px - centers horizontally
-                            const marginY = (layout.canvasHeight - totalContentHeight) / 2; // 140px - centers vertically
-                            
-                            photoX = marginX + (index % 2) * (photoWidth + gap);
-                            photoY = marginY + Math.floor(index / 2) * (photoHeight + gap) - 50;
-                        }
-
-                        const imgAspect = img.width / img.height;
-                        const targetAspect = photoWidth / photoHeight;
-                        
-                        let drawWidth, drawHeight, drawX, drawY;
-                        
-                        if (imgAspect > targetAspect) {
-                            drawHeight = photoHeight;
-                            drawWidth = photoHeight * imgAspect;
-                            drawX = photoX - (drawWidth - photoWidth) / 2;
-                            drawY = photoY;
-                        } else {
-                            drawWidth = photoWidth;
-                            drawHeight = photoWidth / imgAspect;
-                            drawX = photoX;
-                            drawY = photoY - (drawHeight - photoHeight) / 2;
-                        }
-
-                        ctx.save();
-                        const radius = 0;
-                        ctx.beginPath();
-                        ctx.roundRect(photoX, photoY, photoWidth, photoHeight, radius);
-                        ctx.clip();
-                        ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
-                        ctx.restore();
-
-                        ctx.save();
-                        ctx.beginPath();
-                        ctx.roundRect(photoX, photoY, photoWidth, photoHeight, radius);
-                        
-                        const isYeoboothFrame = selectedFrame.includes('yeobooth');
-                        ctx.strokeStyle = isYeoboothFrame ? '#ef8d56' : '#ffffff';
-                        ctx.lineWidth = isYeoboothFrame ? 0 : 0;
-                        ctx.stroke();
-                        ctx.restore();
-                        
-                        resolve();
-                    };
-                    img.onerror = () => {
-                        console.error('Failed to load photo:', index);
-                        resolve(); 
-                    };
-                    img.src = photoDataUrl;
-                });
-            });
-
-            Promise.all(loadPromises).then(() => {
-                if (caption.trim()) {
-                    ctx.fillStyle = '#333333';
-                    ctx.font = 'bold 28px DynaPuff, system-ui';
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-
-                    const captionY = selectedLayout === '2x2' 
-                        ? layout.canvasHeight - 120  
-                        : layout.canvasHeight - 190; 
-                    const captionX = layout.canvasWidth / 2;
-
-                    const truncatedCaption = caption.length > 50 ? caption.substring(0, 50) + '...' : caption;
-                    ctx.fillText(truncatedCaption, captionX, captionY);
-                }
-
-                // Download the final image
-                const link = document.createElement('a');
-                link.download = `yeobooth-${selectedLayout}-${selectedFrame}-${Date.now()}.png`;
-                link.href = canvas.toDataURL('image/png', 0.95);
-                link.click();
-            });
-        };
-        
-        frameImg.onerror = () => {
-            console.error('Failed to load frame:', selectedFrameData.image);
-            const link = document.createElement('a');
-            link.download = `yeobooth-${selectedLayout}-no-frame-${Date.now()}.png`;
-            link.href = canvas.toDataURL('image/png', 0.95);
-            link.click();
-        };
-        
-        frameImg.src = selectedFrameData.image;
+    // Helper function to load images with proper error handling
+    const loadImage = (src: string): Promise<HTMLImageElement> => {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.onload = () => resolve(img);
+            img.onerror = () => reject(new Error(`Failed to load image: ${src}`));
+            img.src = src;
+        });
     };
 
-    const generatePreview = useCallback(() => {
+    // Helper function for file download
+    const downloadFile = (dataUrl: string, filename: string) => {
+        try {
+            const link = document.createElement('a');
+            link.download = filename;
+            link.href = dataUrl;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        } catch (error) {
+            console.error('Direct download failed:', error);
+            // Fallback: open in new tab
+            window.open(dataUrl);
+        }
+    };
+
+    const downloadCollage = async () => {
+        if (capturedPhotos.length === 0) return;
+
+        try {
+            setIsDownloading(true);
+            
+            // Create a smaller canvas for mobile devices
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            if (!ctx) {
+                throw new Error('Canvas context not available');
+            }
+
+            const layout = selectedLayoutData;
+            
+            // Reduce canvas size for mobile to prevent memory issues
+            const scaleFactor = isMobile ? 0.7 : 1;
+            canvas.width = layout.canvasWidth * scaleFactor;
+            canvas.height = layout.canvasHeight * scaleFactor;
+
+            const selectedFrameData = availableFrames.find(f => f.id === selectedFrame);
+            if (!selectedFrameData) {
+                throw new Error('Frame not found');
+            }
+
+            // Use Promise-based approach for better error handling
+            const frameImg = await loadImage(selectedFrameData.image);
+            
+            // Scale and draw frame
+            ctx.save();
+            ctx.scale(scaleFactor, scaleFactor);
+            ctx.drawImage(frameImg, 0, 0, layout.canvasWidth, layout.canvasHeight);
+            ctx.restore();
+
+            // Load and draw photos
+            const photoPromises = capturedPhotos.map(async (photoDataUrl, index) => {
+                const img = await loadImage(photoDataUrl);
+                
+                let photoX = 0, photoY = 0, photoWidth = 400, photoHeight = 400;
+                
+                // Calculate positions (same logic as before)
+                if (selectedLayout === '1x1') {
+                    photoWidth = 540;
+                    photoHeight = 610;
+                    photoX = (layout.canvasWidth - photoWidth) / 2;
+                    photoY = (layout.canvasHeight - photoHeight) / 2 - 100;
+                } else if (selectedLayout === '1x3') {
+                    photoWidth = 540;
+                    photoHeight = 470;
+                    photoX = (layout.canvasWidth - photoWidth) / 2;
+                    const startY = 40;
+                    const gap = 485;
+                    photoY = startY + (index * gap);
+                } else if (selectedLayout === '2x2') {
+                    photoWidth = 450;
+                    photoHeight = 450;
+                    const gap = 20;
+                    const totalContentWidth = (photoWidth * 2) + gap;
+                    const totalContentHeight = (photoHeight * 2) + gap;
+                    const marginX = (layout.canvasWidth - totalContentWidth) / 2;
+                    const marginY = (layout.canvasHeight - totalContentHeight) / 2;
+                    
+                    photoX = marginX + (index % 2) * (photoWidth + gap);
+                    photoY = marginY + Math.floor(index / 2) * (photoHeight + gap) - 50;
+                }
+
+                // Scale positions for mobile
+                photoX *= scaleFactor;
+                photoY *= scaleFactor;
+                photoWidth *= scaleFactor;
+                photoHeight *= scaleFactor;
+
+                const imgAspect = img.width / img.height;
+                const targetAspect = photoWidth / photoHeight;
+                
+                let drawWidth, drawHeight, drawX, drawY;
+                
+                if (imgAspect > targetAspect) {
+                    drawHeight = photoHeight;
+                    drawWidth = photoHeight * imgAspect;
+                    drawX = photoX - (drawWidth - photoWidth) / 2;
+                    drawY = photoY;
+                } else {
+                    drawWidth = photoWidth;
+                    drawHeight = photoWidth / imgAspect;
+                    drawX = photoX;
+                    drawY = photoY - (drawHeight - photoHeight) / 2;
+                }
+
+                ctx.save();
+                const radius = 0;
+                ctx.beginPath();
+                ctx.roundRect(photoX, photoY, photoWidth, photoHeight, radius);
+                ctx.clip();
+                ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+                ctx.restore();
+
+                ctx.save();
+                ctx.beginPath();
+                ctx.roundRect(photoX, photoY, photoWidth, photoHeight, radius);
+                
+                const isYeoboothFrame = selectedFrame.includes('yeobooth');
+                ctx.strokeStyle = isYeoboothFrame ? '#ef8d56' : '#ffffff';
+                ctx.lineWidth = isYeoboothFrame ? 0 : 0;
+                ctx.stroke();
+                ctx.restore();
+            });
+
+            await Promise.all(photoPromises);
+
+            // Add caption if present
+            if (caption.trim()) {
+                ctx.fillStyle = '#333333';
+                ctx.font = `bold ${28 * scaleFactor}px DynaPuff, system-ui`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+
+                const captionY = (selectedLayout === '2x2' 
+                    ? layout.canvasHeight - 120  
+                    : layout.canvasHeight - 190) * scaleFactor;
+                const captionX = (layout.canvasWidth / 2) * scaleFactor;
+
+                const truncatedCaption = caption.length > 50 ? caption.substring(0, 50) + '...' : caption;
+                ctx.fillText(truncatedCaption, captionX, captionY);
+            }
+
+            // Use different download approach for mobile
+            const dataUrl = canvas.toDataURL('image/jpeg', 0.8); // Use JPEG for smaller file size
+            
+            // Memory cleanup
+            canvas.width = 1;
+            canvas.height = 1;
+            ctx.clearRect(0, 0, 1, 1);
+            
+            if (isMobile) {
+                // For mobile, open in new tab instead of direct download
+                const newWindow = window.open();
+                if (newWindow) {
+                    newWindow.document.write(`
+                        <html>
+                            <head>
+                                <title>Your Yeobooth Photo</title>
+                                <meta name="viewport" content="width=device-width, initial-scale=1">
+                                <style>
+                                    body { margin: 0; padding: 20px; text-align: center; background: #f5f5f5; font-family: system-ui; }
+                                    img { max-width: 100%; height: auto; border-radius: 10px; box-shadow: 0 4px 8px rgba(0,0,0,0.2); }
+                                    .instructions { margin: 20px 0; color: #666; }
+                                    .title { color: #333; margin-bottom: 10px; }
+                                </style>
+                            </head>
+                            <body>
+                                <h2 class="title">Your Yeobooth Photo</h2>
+                                <div class="instructions">Long press the image below and select "Save to Photos" or "Download Image"</div>
+                                <img src="${dataUrl}" alt="Your Yeobooth Photo"/>
+                            </body>
+                        </html>
+                    `);
+                } else {
+                    // Fallback: try direct download
+                    downloadFile(dataUrl, `yeobooth-${selectedLayout}-${selectedFrame}-${Date.now()}.jpg`);
+                }
+            } else {
+                // Desktop: use direct download
+                downloadFile(dataUrl, `yeobooth-${selectedLayout}-${selectedFrame}-${Date.now()}.jpg`);
+            }
+
+        } catch (error) {
+            console.error('Download failed:', error);
+            alert('Download failed. Please try again or contact support.');
+        } finally {
+            setIsDownloading(false);
+        }
+    };
+
+    const generatePreview = useCallback(async () => {
         if (capturedPhotos.length === 0) {
             setPreviewDataUrl(null);
             return;
         }
 
-        const canvas = document.createElement('canvas');
-        const ctx = canvas.getContext('2d');
-        if (!ctx) return;
+        try {
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            if (!ctx) return;
 
-        const layout = selectedLayoutData;
-        canvas.width = layout.canvasWidth;
-        canvas.height = layout.canvasHeight;
+            const layout = selectedLayoutData;
+            
+            // Use smaller canvas for preview
+            const previewScale = 0.3;
+            canvas.width = layout.canvasWidth * previewScale;
+            canvas.height = layout.canvasHeight * previewScale;
 
-        const selectedFrameData = availableFrames.find(f => f.id === selectedFrame);
-        if (!selectedFrameData) return;
+            const selectedFrameData = availableFrames.find(f => f.id === selectedFrame);
+            if (!selectedFrameData) return;
 
-        // Load frame image first
-        const frameImg = new Image();
-        frameImg.onload = () => {
+            const frameImg = await loadImage(selectedFrameData.image);
+            
+            ctx.save();
+            ctx.scale(previewScale, previewScale);
             ctx.drawImage(frameImg, 0, 0, layout.canvasWidth, layout.canvasHeight);
+            ctx.restore();
 
-            const loadPromises = capturedPhotos.map((photoDataUrl, index) => {
-                return new Promise<void>((resolve) => {
-                    const img = new Image();
-                    img.onload = () => {
-                        let photoX = 0, photoY = 0, photoWidth = 400, photoHeight = 400;
-                        
-                        if (selectedLayout === '1x1') {
-                            photoWidth = 540;
-                            photoHeight = 610;
-                            photoX = (layout.canvasWidth - photoWidth) / 2;
-                            photoY = (layout.canvasHeight - photoHeight) / 2 - 100;
-                        } else if (selectedLayout === '1x3') {
-                            photoWidth = 540;
-                            photoHeight = 470;
-                            photoX = (layout.canvasWidth - photoWidth) / 2;
-                            const startY = 40;
-                            const gap = 485;
-                            photoY = startY + (index * gap);
-                        } else if (selectedLayout === '2x2') {
-                            photoWidth = 450;
-                            photoHeight = 450;
-                            const gap = 20;
-                            const totalContentWidth = (photoWidth * 2) + gap;
-                            const totalContentHeight = (photoHeight * 2) + gap;
-                            const marginX = (layout.canvasWidth - totalContentWidth) / 2;
-                            const marginY = (layout.canvasHeight - totalContentHeight) / 2;
-                            
-                            photoX = marginX + (index % 2) * (photoWidth + gap);
-                            photoY = marginY + Math.floor(index / 2) * (photoHeight + gap);
-                        }
-
-                        const imgAspect = img.width / img.height;
-                        const targetAspect = photoWidth / photoHeight;
-                        
-                        let drawWidth, drawHeight, drawX, drawY;
-                        
-                        if (imgAspect > targetAspect) {
-                            drawHeight = photoHeight;
-                            drawWidth = photoHeight * imgAspect;
-                            drawX = photoX - (drawWidth - photoWidth) / 2;
-                            drawY = photoY;
-                        } else {
-                            drawWidth = photoWidth;
-                            drawHeight = photoWidth / imgAspect;
-                            drawX = photoX;
-                            drawY = photoY - (drawHeight - photoHeight) / 2;
-                        }
-
-                        ctx.save();
-                        const radius = 0;
-                        ctx.beginPath();
-                        ctx.roundRect(photoX, photoY, photoWidth, photoHeight, radius);
-                        ctx.clip();
-                        ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
-                        ctx.restore();
-
-                        ctx.save();
-                        ctx.beginPath();
-                        ctx.roundRect(photoX, photoY, photoWidth, photoHeight, radius);
-                        
-                        const isYeoboothFrame = selectedFrame.includes('yeobooth');
-                        ctx.strokeStyle = isYeoboothFrame ? '#ef8d56' : '#ffffff';
-                        ctx.lineWidth = isYeoboothFrame ? 0 : 0;
-                        ctx.stroke();
-                        ctx.restore();
-                        
-                        resolve();
-                    };
-                    img.onerror = () => {
-                        console.error('Failed to load photo for preview:', index);
-                        resolve();
-                    };
-                    img.src = photoDataUrl;
-                });
-            });
-
-            Promise.all(loadPromises).then(() => {
-                if (caption.trim()) {
-                    ctx.fillStyle = '#333333';
-                    ctx.font = 'bold 28px DynaPuff, system-ui';
-                    ctx.textAlign = 'center';
-                    ctx.textBaseline = 'middle';
-
-                    const captionY = selectedLayout === '2x2' 
-                        ? layout.canvasHeight - 120  
-                        : layout.canvasHeight - 190;
-                    const captionX = layout.canvasWidth / 2;
-
-                    const truncatedCaption = caption.length > 50 ? caption.substring(0, 50) + '...' : caption;
-                    ctx.fillText(truncatedCaption, captionX, captionY);
+            const photoPromises = capturedPhotos.map(async (photoDataUrl, index) => {
+                const img = await loadImage(photoDataUrl);
+                
+                // Same positioning logic but scaled down
+                let photoX = 0, photoY = 0, photoWidth = 400, photoHeight = 400;
+                
+                if (selectedLayout === '1x1') {
+                    photoWidth = 540;
+                    photoHeight = 610;
+                    photoX = (layout.canvasWidth - photoWidth) / 2;
+                    photoY = (layout.canvasHeight - photoHeight) / 2 - 100;
+                } else if (selectedLayout === '1x3') {
+                    photoWidth = 540;
+                    photoHeight = 470;
+                    photoX = (layout.canvasWidth - photoWidth) / 2;
+                    const startY = 40;
+                    const gap = 485;
+                    photoY = startY + (index * gap);
+                } else if (selectedLayout === '2x2') {
+                    photoWidth = 450;
+                    photoHeight = 450;
+                    const gap = 20;
+                    const totalContentWidth = (photoWidth * 2) + gap;
+                    const totalContentHeight = (photoHeight * 2) + gap;
+                    const marginX = (layout.canvasWidth - totalContentWidth) / 2;
+                    const marginY = (layout.canvasHeight - totalContentHeight) / 2;
+                    
+                    photoX = marginX + (index % 2) * (photoWidth + gap);
+                    photoY = marginY + Math.floor(index / 2) * (photoHeight + gap);
                 }
 
-                setPreviewDataUrl(canvas.toDataURL('image/png', 0.8));
+                // Scale for preview
+                photoX *= previewScale;
+                photoY *= previewScale;
+                photoWidth *= previewScale;
+                photoHeight *= previewScale;
+
+                const imgAspect = img.width / img.height;
+                const targetAspect = photoWidth / photoHeight;
+                
+                let drawWidth, drawHeight, drawX, drawY;
+                
+                if (imgAspect > targetAspect) {
+                    drawHeight = photoHeight;
+                    drawWidth = photoHeight * imgAspect;
+                    drawX = photoX - (drawWidth - photoWidth) / 2;
+                    drawY = photoY;
+                } else {
+                    drawWidth = photoWidth;
+                    drawHeight = photoWidth / imgAspect;
+                    drawX = photoX;
+                    drawY = photoY - (drawHeight - photoHeight) / 2;
+                }
+
+                ctx.save();
+                ctx.beginPath();
+                ctx.roundRect(photoX, photoY, photoWidth, photoHeight, 0);
+                ctx.clip();
+                ctx.drawImage(img, drawX, drawY, drawWidth, drawHeight);
+                ctx.restore();
             });
-        };
-        
-        frameImg.onerror = () => {
-            console.error('Failed to load frame for preview:', selectedFrameData.image);
+
+            await Promise.all(photoPromises);
+
+            if (caption.trim()) {
+                ctx.fillStyle = '#333333';
+                ctx.font = `bold ${28 * previewScale}px DynaPuff, system-ui`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+
+                const captionY = (selectedLayout === '2x2' 
+                    ? layout.canvasHeight - 120  
+                    : layout.canvasHeight - 190) * previewScale;
+                const captionX = (layout.canvasWidth / 2) * previewScale;
+
+                const truncatedCaption = caption.length > 50 ? caption.substring(0, 50) + '...' : caption;
+                ctx.fillText(truncatedCaption, captionX, captionY);
+            }
+
+            setPreviewDataUrl(canvas.toDataURL('image/jpeg', 0.6));
+            
+            // Memory cleanup
+            canvas.width = 1;
+            canvas.height = 1;
+            ctx.clearRect(0, 0, 1, 1);
+            
+        } catch (error) {
+            console.error('Preview generation failed:', error);
             setPreviewDataUrl(null);
-        };
-        
-        frameImg.src = selectedFrameData.image;
+        }
     }, [capturedPhotos, caption, selectedLayout, selectedFrame, selectedLayoutData, availableFrames]);
 
     // Generate preview when photos or caption change
@@ -675,9 +742,14 @@ const Photobooth = () => {
                                     <div className="grid grid-cols-2 gap-3">
                                         <button
                                             onClick={downloadCollage}
-                                            className="glass-button justify-center py-3"
+                                            disabled={isDownloading}
+                                            className="glass-button justify-center py-3 disabled:opacity-50"
                                         >
-                                            <span className="font-dynapuff font-semibold text-amber-800">Download</span>
+                                            {isDownloading ? (
+                                                <div className="w-4 h-4 border-2 border-amber-800 border-t-transparent rounded-full animate-spin"></div>
+                                            ) : (
+                                                <span className="font-dynapuff font-semibold text-amber-800">Download</span>
+                                            )}
                                         </button>
                                         <button
                                             onClick={resetSession}
