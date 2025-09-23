@@ -252,7 +252,11 @@ const Photobooth = () => {
         const sourceX = (video.videoWidth - size) / 2;
         const sourceY = (video.videoHeight - size) / 2;
 
-        ctx.drawImage(video, sourceX, sourceY, size, size, 0, 0, size, size);
+        // Mirror the image horizontally to match the preview
+        ctx.save();
+        ctx.scale(-1, 1);
+        ctx.drawImage(video, sourceX, sourceY, size, size, -size, 0, size, size);
+        ctx.restore();
 
         const photoDataUrl = canvas.toDataURL('image/png');
 
@@ -691,7 +695,10 @@ const Photobooth = () => {
                                 playsInline
                                 muted
                                 className="w-full h-full object-cover"
-                                style={{ opacity: isLoading || cameraError ? 0 : 1 }}
+                                style={{ 
+                                    opacity: isLoading || cameraError ? 0 : 1,
+                                    transform: 'scaleX(-1)' // Mirror the video preview
+                                }}
                             />
 
                             {showFlash && (
